@@ -1,0 +1,332 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ExecuteMsg",
+  "oneOf": [
+    {
+      "type": "object",
+      "required": [
+        "create_data_item"
+      ],
+      "properties": {
+        "create_data_item": {
+          "type": "object",
+          "required": [
+            "ipfs_hash",
+            "is_public",
+            "metadata_uri",
+            "price"
+          ],
+          "properties": {
+            "ipfs_hash": {
+              "type": "string"
+            },
+            "is_public": {
+              "type": "boolean"
+            },
+            "metadata_uri": {
+              "type": "string"
+            },
+            "price": {
+              "$ref": "#/definitions/Uint128"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "request_access"
+      ],
+      "properties": {
+        "request_access": {
+          "type": "object",
+          "required": [
+            "token_id"
+          ],
+          "properties": {
+            "token_id": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "update_data_item"
+      ],
+      "properties": {
+        "update_data_item": {
+          "type": "object",
+          "required": [
+            "new_ipfs_hash",
+            "new_metadata_uri",
+            "token_id"
+          ],
+          "properties": {
+            "new_ipfs_hash": {
+              "type": "string"
+            },
+            "new_metadata_uri": {
+              "type": "string"
+            },
+            "token_id": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "freeze_data"
+      ],
+      "properties": {
+        "freeze_data": {
+          "type": "object",
+          "required": [
+            "freeze",
+            "token_id"
+          ],
+          "properties": {
+            "freeze": {
+              "type": "boolean"
+            },
+            "token_id": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "grant_access"
+      ],
+      "properties": {
+        "grant_access": {
+          "type": "object",
+          "required": [
+            "grantee",
+            "level",
+            "token_id"
+          ],
+          "properties": {
+            "grantee": {
+              "type": "string"
+            },
+            "level": {
+              "$ref": "#/definitions/AccessLevel"
+            },
+            "token_id": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "transfer_nft"
+      ],
+      "properties": {
+        "transfer_nft": {
+          "type": "object",
+          "required": [
+            "recipient",
+            "token_id"
+          ],
+          "properties": {
+            "recipient": {
+              "type": "string"
+            },
+            "token_id": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "approve"
+      ],
+      "properties": {
+        "approve": {
+          "type": "object",
+          "required": [
+            "spender",
+            "token_id"
+          ],
+          "properties": {
+            "spender": {
+              "type": "string"
+            },
+            "token_id": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "approve_all"
+      ],
+      "properties": {
+        "approve_all": {
+          "type": "object",
+          "required": [
+            "operator"
+          ],
+          "properties": {
+            "operator": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "revoke_all"
+      ],
+      "properties": {
+        "revoke_all": {
+          "type": "object",
+          "required": [
+            "operator"
+          ],
+          "properties": {
+            "operator": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "create_paper_item"
+      ],
+      "properties": {
+        "create_paper_item": {
+          "type": "object",
+          "required": [
+            "doi",
+            "ipfs_hash",
+            "metadata_uri"
+          ],
+          "properties": {
+            "doi": {
+              "type": "string"
+            },
+            "ipfs_hash": {
+              "type": "string"
+            },
+            "metadata_uri": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "set_base_citation_fee"
+      ],
+      "properties": {
+        "set_base_citation_fee": {
+          "type": "object",
+          "required": [
+            "fee"
+          ],
+          "properties": {
+            "fee": {
+              "$ref": "#/definitions/Uint128"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "cite_paper"
+      ],
+      "properties": {
+        "cite_paper": {
+          "type": "object",
+          "required": [
+            "paper_id"
+          ],
+          "properties": {
+            "paper_id": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "submit_correction"
+      ],
+      "properties": {
+        "submit_correction": {
+          "type": "object",
+          "required": [
+            "new_ipfs_hash",
+            "original_paper_id"
+          ],
+          "properties": {
+            "new_ipfs_hash": {
+              "type": "string"
+            },
+            "original_paper_id": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  ],
+  "definitions": {
+    "AccessLevel": {
+      "type": "string",
+      "enum": [
+        "None",
+        "Read",
+        "Write"
+      ]
+    },
+    "Uint128": {
+      "description": "A thin wrapper around u128 that is using strings for JSON encoding/decoding, such that the full u128 range can be used for clients that convert JSON numbers to floats, like JavaScript and jq.\n\n# Examples\n\nUse `from` to create instances of this and `u128` to get the value out:\n\n``` # use cosmwasm_std::Uint128; let a = Uint128::from(123u128); assert_eq!(a.u128(), 123);\n\nlet b = Uint128::from(42u64); assert_eq!(b.u128(), 42);\n\nlet c = Uint128::from(70u32); assert_eq!(c.u128(), 70); ```",
+      "type": "string"
+    }
+  }
+}
