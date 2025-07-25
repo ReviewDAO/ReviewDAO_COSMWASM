@@ -13,7 +13,7 @@ artifacts: build
 	cosmwasm/rust-optimizer:0.17.0
 
 fmt:
-	cargo fmt --all -- --check
+	cargo fmt --all
 
 clean:
 	cargo clean
