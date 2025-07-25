@@ -1,4 +1,6 @@
-use crate::msg::{AccessLevel, Citation, DataItem, DataVersion};
+use crate::msg::{
+    AccessLevel, Citation, DaoConfig, DataItem, DataVersion, Proposal, Vote, VoteCount,
+};
 use cosmwasm_std::{Addr, Uint128};
 use cw_storage_plus::{Item, Map};
 
@@ -22,7 +24,15 @@ pub const DATA_VERSIONS: Map<&str, Vec<DataVersion>> = Map::new("data_versions")
 pub const ACCESS_CONTROLS: Map<(&str, &str), AccessLevel> = Map::new("access_controls");
 pub const AUTHORIZED_USERS: Map<&str, Vec<Addr>> = Map::new("authorized_users");
 
-// 论文特定存储 
+// 论文特定存储
 pub const CITATIONS: Map<&str, Vec<Citation>> = Map::new("citations");
 pub const PAPER_DOIS: Map<&str, String> = Map::new("paper_dois");
 pub const BASE_CITATION_FEE: Item<Uint128> = Item::new("base_citation_fee");
+
+// DAO 存储
+pub const DAO_MEMBERS: Map<&str, bool> = Map::new("dao_members");
+pub const DAO_CONFIG: Item<DaoConfig> = Item::new("dao_config");
+pub const PROPOSALS: Map<u64, Proposal> = Map::new("proposals");
+pub const PROPOSAL_COUNTER: Item<u64> = Item::new("proposal_counter");
+pub const VOTES: Map<(u64, &str), Vote> = Map::new("votes");
+pub const VOTE_COUNTS: Map<u64, VoteCount> = Map::new("vote_counts");

@@ -73,6 +73,33 @@ pub enum ExecuteMsg {
         original_paper_id: String,
         new_ipfs_hash: String,
     },
+
+    // DAO 治理消息
+    SubmitArticleProposal {
+        ipfs_hash: String,
+        doi: String,
+        metadata_uri: String,
+        title: String,
+        description: String,
+    },
+    SubmitMemberProposal {
+        member_address: String,
+        action: MemberAction,
+        title: String,
+        description: String,
+    },
+    VoteOnProposal {
+        proposal_id: u64,
+        choice: VoteChoice,
+    },
+    ExecuteProposal {
+        proposal_id: u64,
+    },
+    UpdateDaoConfig {
+        voting_period: Option<u64>,
+        approval_threshold: Option<u64>,
+        min_members: Option<u64>,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -113,6 +140,28 @@ pub enum QueryMsg {
         paper_id: String,
     },
     GetBaseCitationFee {},
+
+    // DAO 查询
+    GetDaoMembers {},
+    GetDaoConfig {},
+    GetProposal {
+        proposal_id: u64,
+    },
+    GetProposals {
+        start_after: Option<u64>,
+        limit: Option<u32>,
+        status_filter: Option<ProposalStatus>,
+    },
+    GetVote {
+        proposal_id: u64,
+        voter: String,
+    },
+    GetVoteCount {
+        proposal_id: u64,
+    },
+    GetMemberVotingPower {
+        member: String,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -176,4 +225,126 @@ pub struct Citation {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct BaseCitationFeeResponse {
     pub fee: Uint128,
+}
+
+// DAO 相关数据结构
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct DaoConfig {
+    pub voting_period: u64,      // 投票期限（秒）
+    pub approval_threshold: u64, // 通过阈值（百分比，如51表示51%）
+    pub min_members: u64,        // 最小成员数量
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct Proposal {
+    pub id: u64,
+    pub proposer: Addr,
+    pub proposal_type: ProposalType,
+    pub title: String,
+    pub description: String,
+    pub created_at: u64,
+    pub voting_end: u64,
+    pub status: ProposalStatus,
+    pub execution_data: Option<ExecutionData>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub enum ProposalType {
+    ArticlePublication,
+    AddMember,
+    RemoveMember,
+    UpdateConfig,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub enum ProposalStatus {
+    Active,   // 投票中
+    Passed,   // 通过
+    Rejected, // 拒绝
+    Executed, // 已执行
+    Expired,  // 已过期
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct Vote {
+    pub voter: Addr,
+    pub choice: VoteChoice,
+    pub timestamp: u64,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub enum VoteChoice {
+    Yes,
+    No,
+    Abstain,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct VoteCount {
+    pub yes: u64,
+    pub no: u64,
+    pub abstain: u64,
+    pub total_eligible: u64,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub enum ExecutionData {
+    ArticlePublication {
+        ipfs_hash: String,
+        doi: String,
+        metadata_uri: String,
+    },
+    MemberChange {
+        member_address: String,
+        action: MemberAction,
+    },
+    ConfigUpdate {
+        new_config: DaoConfig,
+    },
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub enum MemberAction {
+    Add,
+    Remove,
+}
+
+// DAO 查询响应结构
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct DaoMembersResponse {
+    pub members: Vec<Addr>,
+    pub total_count: u64,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct ProposalsResponse {
+    pub proposals: Vec<Proposal>,
+    pub total_count: u64,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct VotingPowerResponse {
+    pub power: u64,
+    pub is_member: bool,
+}
+
+// Additional DAO query response structures
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct DaoConfigResponse {
+    pub config: DaoConfig,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct ProposalResponse {
+    pub proposal: Proposal,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct VoteResponse {
+    pub vote: Option<Vote>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct VoteCountResponse {
+    pub vote_count: VoteCount,
 }
