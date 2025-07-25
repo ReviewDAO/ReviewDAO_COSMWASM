@@ -229,6 +229,172 @@
         }
       },
       "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "get_dao_members"
+      ],
+      "properties": {
+        "get_dao_members": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "get_dao_config"
+      ],
+      "properties": {
+        "get_dao_config": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "get_proposal"
+      ],
+      "properties": {
+        "get_proposal": {
+          "type": "object",
+          "required": [
+            "proposal_id"
+          ],
+          "properties": {
+            "proposal_id": {
+              "type": "integer",
+              "format": "uint64",
+              "minimum": 0.0
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "get_proposals"
+      ],
+      "properties": {
+        "get_proposals": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "uint32",
+              "minimum": 0.0
+            },
+            "start_after": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "uint64",
+              "minimum": 0.0
+            },
+            "status_filter": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/ProposalStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "get_vote"
+      ],
+      "properties": {
+        "get_vote": {
+          "type": "object",
+          "required": [
+            "proposal_id",
+            "voter"
+          ],
+          "properties": {
+            "proposal_id": {
+              "type": "integer",
+              "format": "uint64",
+              "minimum": 0.0
+            },
+            "voter": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "get_vote_count"
+      ],
+      "properties": {
+        "get_vote_count": {
+          "type": "object",
+          "required": [
+            "proposal_id"
+          ],
+          "properties": {
+            "proposal_id": {
+              "type": "integer",
+              "format": "uint64",
+              "minimum": 0.0
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "get_member_voting_power"
+      ],
+      "properties": {
+        "get_member_voting_power": {
+          "type": "object",
+          "required": [
+            "member"
+          ],
+          "properties": {
+            "member": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
     }
-  ]
+  ],
+  "definitions": {
+    "ProposalStatus": {
+      "type": "string",
+      "enum": [
+        "Active",
+        "Passed",
+        "Rejected",
+        "Executed",
+        "Expired"
+      ]
+    }
+  }
 }
