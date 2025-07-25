@@ -568,7 +568,7 @@ pub fn execute_grant_access(
         let mut authorized = AUTHORIZED_USERS
             .may_load(deps.storage, &token_id)?
             .unwrap_or_default();
-        authorized.retain(|addr| addr != &grantee_addr);
+        authorized.retain(|addr| addr != grantee_addr);
         AUTHORIZED_USERS.save(deps.storage, &token_id, &authorized)?;
     }
 
@@ -901,7 +901,7 @@ pub fn query_dao_members(deps: Deps) -> StdResult<crate::msg::DaoMembersResponse
                 if is_member {
                     match deps.api.addr_validate(&addr_str) {
                         Ok(addr) => Some(Ok(addr)),
-                        Err(e) => Some(Err(e.into())),
+                        Err(e) => Some(Err(e)),
                     }
                 } else {
                     None
@@ -1696,7 +1696,7 @@ pub fn check_approval_threshold(deps: Deps, proposal_id: u64) -> Result<bool, Co
     let dao_config = DAO_CONFIG.load(deps.storage)?;
 
     // 计算通过阈值（向上取整）
-    let required_yes_votes = (vote_count.total_eligible * dao_config.approval_threshold + 99) / 100;
+    let required_yes_votes = (vote_count.total_eligible * dao_config.approval_threshold).div_ceil(100);
 
     // 检查是否达到通过阈值
     Ok(vote_count.yes >= required_yes_votes)
@@ -1712,7 +1712,7 @@ pub fn check_impossible_to_pass(deps: Deps, proposal_id: u64) -> Result<bool, Co
     let dao_config = DAO_CONFIG.load(deps.storage)?;
 
     // 计算通过阈值
-    let required_yes_votes = (vote_count.total_eligible * dao_config.approval_threshold + 99) / 100;
+    let required_yes_votes = (vote_count.total_eligible * dao_config.approval_threshold).div_ceil(100);
 
     // 计算已投票数
     let total_voted = vote_count.yes + vote_count.no + vote_count.abstain;
@@ -1735,7 +1735,7 @@ pub fn get_detailed_vote_statistics(
     let impossible = check_impossible_to_pass(deps, proposal_id)?;
 
     let dao_config = DAO_CONFIG.load(deps.storage)?;
-    let required_yes_votes = (vote_count.total_eligible * dao_config.approval_threshold + 99) / 100;
+    let required_yes_votes = (vote_count.total_eligible * dao_config.approval_threshold).div_ceil(100);
 
     Ok((vote_count, passed, impossible, required_yes_votes))
 }
