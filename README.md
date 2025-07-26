@@ -253,6 +253,8 @@ injectived tx wasm execute $CONTRACT_ADDRESS$ \
 --output json
 ```
 
+for more, click [here](./test_commands.md)
+
 
 ## 技术特点
 
