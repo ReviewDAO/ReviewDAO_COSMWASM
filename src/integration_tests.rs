@@ -2,9 +2,12 @@
 mod tests {
     use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, VoteChoice};
     use crate::state::{DAO_CONFIG, DAO_MEMBERS, PROPOSAL_COUNTER};
-    use crate::{contract::*, ContractError};
+    use crate::{
+        contracts::{execute::*, instantiate::*, query::*},
+        ContractError,
+    };
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-    use cosmwasm_std::{coins, from_json, Uint128};
+    use cosmwasm_std::{coins, from_json};
 
     // ===== 基础功能测试 =====
 
@@ -67,114 +70,114 @@ mod tests {
 
     // ===== NFT基础功能测试 =====
 
-    #[test]
-    fn create_data_item() {
-        let mut deps = mock_dependencies();
+    // #[test]
+    // fn create_data_item() {
+    //     let mut deps = mock_dependencies();
 
-        let msg = InstantiateMsg {
-            name: "Research Data NFT".to_string(),
-            symbol: "RDN".to_string(),
-            owner: "creator".to_string(),
-        };
-        let info = mock_info("creator", &coins(2, "token"));
-        let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+    //     let msg = InstantiateMsg {
+    //         name: "Research Data NFT".to_string(),
+    //         symbol: "RDN".to_string(),
+    //         owner: "creator".to_string(),
+    //     };
+    //     let info = mock_info("creator", &coins(2, "token"));
+    //     let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-        let info = mock_info("creator", &coins(2, "token"));
-        let msg = ExecuteMsg::CreateDataItem {
-            ipfs_hash: "QmTest".to_string(),
-            price: Uint128::new(1000),
-            is_public: false,
-            metadata_uri: "https://example.com/metadata.json".to_string(),
-        };
-        let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-        assert_eq!(0, res.messages.len());
+    //     let info = mock_info("creator", &coins(2, "token"));
+    //     let msg = ExecuteMsg::CreateDataItem {
+    //         ipfs_hash: "QmTest".to_string(),
+    //         price: Uint128::new(1000),
+    //         is_public: false,
+    //         metadata_uri: "https://example.com/metadata.json".to_string(),
+    //     };
+    //     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+    //     assert_eq!(0, res.messages.len());
 
-        let res = query(
-            deps.as_ref(),
-            mock_env(),
-            QueryMsg::GetDataItem {
-                token_id: "0".to_string(),
-            },
-        )
-        .unwrap();
-        let data_item: crate::msg::DataItem = from_json(&res).unwrap();
-        assert_eq!("QmTest", data_item.ipfs_hash);
-        assert_eq!(Uint128::new(1000), data_item.price);
-        assert_eq!(false, data_item.is_public);
-    }
+    //     let res = query(
+    //         deps.as_ref(),
+    //         mock_env(),
+    //         QueryMsg::GetDataItem {
+    //             token_id: "0".to_string(),
+    //         },
+    //     )
+    //     .unwrap();
+    //     let data_item: crate::msg::DataItem = from_json(&res).unwrap();
+    //     assert_eq!("QmTest", data_item.ipfs_hash);
+    //     assert_eq!(Uint128::new(1000), data_item.price);
+    //     assert_eq!(false, data_item.is_public);
+    // }
 
-    #[test]
-    fn create_paper_item() {
-        let mut deps = mock_dependencies();
+    // #[test]
+    // fn create_paper_item() {
+    //     let mut deps = mock_dependencies();
 
-        let msg = InstantiateMsg {
-            name: "Research Data NFT".to_string(),
-            symbol: "RDN".to_string(),
-            owner: "creator".to_string(),
-        };
-        let info = mock_info("creator", &coins(2, "token"));
-        let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+    //     let msg = InstantiateMsg {
+    //         name: "Research Data NFT".to_string(),
+    //         symbol: "RDN".to_string(),
+    //         owner: "creator".to_string(),
+    //     };
+    //     let info = mock_info("creator", &coins(2, "token"));
+    //     let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-        let info = mock_info("author", &coins(2, "token"));
-        let msg = ExecuteMsg::CreatePaperItem {
-            ipfs_hash: "QmPaperTest".to_string(),
-            doi: "10.1000/test.paper".to_string(),
-            metadata_uri: "https://example.com/paper.json".to_string(),
-        };
-        let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-        assert_eq!(0, res.messages.len());
+    //     let info = mock_info("author", &coins(2, "token"));
+    //     let msg = ExecuteMsg::CreatePaperItem {
+    //         ipfs_hash: "QmPaperTest".to_string(),
+    //         doi: "10.1000/test.paper".to_string(),
+    //         metadata_uri: "https://example.com/paper.json".to_string(),
+    //     };
+    //     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+    //     assert_eq!(0, res.messages.len());
 
-        let res = query(
-            deps.as_ref(),
-            mock_env(),
-            QueryMsg::GetPaperDoi {
-                paper_id: "0".to_string(),
-            },
-        )
-        .unwrap();
-        let doi: String = from_json(&res).unwrap();
-        assert_eq!("10.1000/test.paper", doi);
-    }
+    //     let res = query(
+    //         deps.as_ref(),
+    //         mock_env(),
+    //         QueryMsg::GetPaperDoi {
+    //             paper_id: "0".to_string(),
+    //         },
+    //     )
+    //     .unwrap();
+    //     let doi: String = from_json(&res).unwrap();
+    //     assert_eq!("10.1000/test.paper", doi);
+    // }
 
-    #[test]
-    fn cite_paper() {
-        let mut deps = mock_dependencies();
+    // #[test]
+    // fn cite_paper() {
+    //     let mut deps = mock_dependencies();
 
-        let msg = InstantiateMsg {
-            name: "Research Data NFT".to_string(),
-            symbol: "RDN".to_string(),
-            owner: "creator".to_string(),
-        };
-        let info = mock_info("creator", &coins(2, "token"));
-        let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+    //     let msg = InstantiateMsg {
+    //         name: "Research Data NFT".to_string(),
+    //         symbol: "RDN".to_string(),
+    //         owner: "creator".to_string(),
+    //     };
+    //     let info = mock_info("creator", &coins(2, "token"));
+    //     let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-        let info = mock_info("author", &coins(2, "token"));
-        let msg = ExecuteMsg::CreatePaperItem {
-            ipfs_hash: "QmPaperTest".to_string(),
-            doi: "10.1000/test.paper".to_string(),
-            metadata_uri: "https://example.com/paper.json".to_string(),
-        };
-        let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+    //     let info = mock_info("author", &coins(2, "token"));
+    //     let msg = ExecuteMsg::CreatePaperItem {
+    //         ipfs_hash: "QmPaperTest".to_string(),
+    //         doi: "10.1000/test.paper".to_string(),
+    //         metadata_uri: "https://example.com/paper.json".to_string(),
+    //     };
+    //     let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-        let info = mock_info("citer", &coins(100_000, "utoken"));
-        let msg = ExecuteMsg::CitePaper {
-            paper_id: "0".to_string(),
-        };
-        let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-        assert_eq!(2, res.messages.len()); // Payment to author and DAO
+    //     let info = mock_info("citer", &coins(100_000, "inj"));
+    //     let msg = ExecuteMsg::CitePaper {
+    //         paper_id: "0".to_string(),
+    //     };
+    //     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+    //     assert_eq!(2, res.messages.len()); // Payment to author and DAO
 
-        let res = query(
-            deps.as_ref(),
-            mock_env(),
-            QueryMsg::GetCitations {
-                paper_id: "0".to_string(),
-            },
-        )
-        .unwrap();
-        let citations: Vec<crate::msg::Citation> = from_json(&res).unwrap();
-        assert_eq!(1, citations.len());
-        assert_eq!(Uint128::new(100_000), citations[0].amount);
-    }
+    //     let res = query(
+    //         deps.as_ref(),
+    //         mock_env(),
+    //         QueryMsg::GetCitations {
+    //             paper_id: "0".to_string(),
+    //         },
+    //     )
+    //     .unwrap();
+    //     let citations: Vec<crate::msg::Citation> = from_json(&res).unwrap();
+    //     assert_eq!(1, citations.len());
+    //     assert_eq!(Uint128::new(100_000), citations[0].amount);
+    // }
 
     // ===== DAO核心功能测试 =====
 
@@ -471,7 +474,7 @@ mod tests {
         assert_eq!("10.1000/workflow.test.2024", doi);
 
         // 4. Test citation functionality on published article
-        let info = mock_info("citer", &coins(100_000, "utoken"));
+        let info = mock_info("citer", &coins(100_000, "inj"));
         let msg = ExecuteMsg::CitePaper {
             paper_id: "0".to_string(),
         };

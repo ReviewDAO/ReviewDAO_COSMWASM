@@ -133,9 +133,9 @@ make schema
 3. 部署合约到测试网
 4. 初始化合约参数
 
-### Injective Testnet (最新部署 - 2025-07-25)
-`hash`: `inj1ntm3dlcagyvdk2p3cq9mwgmc7njes2n0n6uayy
-`
+### Injective Testnet (最新部署 - 2025-07-26)
+`hash`: `inj1crxs4sfy9smufn7dq63ph064ac5ku8ppfqr69s`
+
 ### 主要使用流程
 
 1. **初始化DAO**: 合约部署时自动创建DAO，部署者成为首个成员
@@ -144,6 +144,115 @@ make schema
 4. **数据访问**: 其他用户可以请求访问数据，支付相应费用
 5. **论文引用**: 引用论文时支付引用费用，自动分配给作者和DAO
 6. **DAO治理**: 成员可以提交各类提案，通过投票决定DAO事务
+
+### 一个简单的例子
+#### Upload Wasm
+```
+yes 12345678 | injectived tx wasm store artifacts/bc.wasm \
+--from=$YOUR_INT_ADDRESS$ \
+--chain-id="injective-888" \
+--yes --fees=1000000000000000inj --gas=3000000 \
+--node=https://testnet.sentry.tm.injective.network:443
+```
+
+#### Get The Code Of Contract
+```
+injectived query tx traction_code --node=https://testnet.sentry.tm.injective.network:443 > tmp
+```
+
+#### Instantiate Contract
+```
+INIT='{"name":"Research Data NFT","symbol":"RDN","owner":$YOUR_INT_ADDRESS$}'
+yes password | injectived tx wasm instantiate the_code_of_contract "$INIT" \
+  --label="ResearchDataNFTInstance" \
+  --from=$YOUR_INT_ADDRESS$ \
+  --chain-id="injective-888" \
+  --yes --fees=1000000000000000inj \
+  --gas=2000000 \
+  --no-admin \
+  --node=https://testnet.sentry.tm.injective.network:443
+```
+
+#### Submit Article Proposal
+```
+injectived tx wasm execute $CONTRACT_ADDRESS$ \
+'{
+  "submit_article_proposal": {
+    "ipfs_hash": "QmWorkflowTest123",
+    "doi": "10.1000/workflow.test.2024",
+    "metadata_uri": "https://example.com/workflow.json",
+    "title": "Complete Workflow Test",
+    "description": "Testing complete DAO governance workflow"
+  }
+}' \
+--from=$YOUR_INT_ADDRESS$ \
+--chain-id=injective-888 \
+--gas=2000000 \
+--fees=1000000000000000inj \
+--node=https://testnet.sentry.tm.injective.network:443 \
+--yes
+
+```
+
+#### Vote On Proposal(Only DAO)
+```
+injectived tx wasm execute $CONTRACT_ADDRESS$ \
+'{
+  "vote_on_proposal": {
+    "proposal_id": 0,
+    "choice": "Yes"
+  }
+}' \
+--from=$YOUR_INT_ADDRESS$ \
+--chain-id=injective-888 \
+--gas=2000000 \
+--fees=1000000000000000inj \
+--node=https://testnet.sentry.tm.injective.network:443 \
+--yes
+
+```
+
+#### Get Doi
+```
+injectived query wasm contract-state smart $CONTRACT_ADDRESS$ \               
+'{
+  "get_paper_doi": {
+    "paper_id": "0"
+  }
+}' \
+--node=https://testnet.sentry.tm.injective.network:443 \
+--output json
+```
+
+#### Cite Paper
+```
+injectived tx wasm execute $CONTRACT_ADDRESS$ \
+'{
+  "cite_paper": {
+    "paper_id": "0"
+  }
+}' \
+--from=$YOUR_INT_ADDRESS$ \
+--chain-id=injective-888 \
+--gas=2000000 \
+--fees=1000000000000000inj \
+--node=https://testnet.sentry.tm.injective.network:443 \
+--yes
+
+```
+
+#### Check Cite
+```
+ injectived query wasm contract-state smart $CONTRACT_ADDRESS$ \
+'{
+  "get_citations": {
+    "paper_id": "0"
+  }
+}' \
+--node=https://testnet.sentry.tm.injective.network:443 \
+--output json
+```
+
 
 ## 技术特点
 
@@ -155,13 +264,4 @@ make schema
 
 ## 贡献指南
 
-欢迎提交Issue和Pull Request。在贡献代码前，请确保：
-1. 运行所有测试通过
-2. 代码符合Rust编码规范
-3. 添加必要的测试用例
-4. 更新相关文档
-
-## 许可证
-
-本项目采用开源许可证，具体信息请查看LICENSE文件。
-
+欢迎提交Issue和Pull Request

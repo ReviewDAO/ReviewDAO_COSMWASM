@@ -13,17 +13,13 @@ pub struct InstantiateMsg {
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     // 核心功能
-    CreateDataItem {
-        ipfs_hash: String,
-        price: Uint128,
-        is_public: bool,
-        metadata_uri: String,
-    },
+    /// 请求访问，需要支付一定费用
     RequestAccess {
         token_id: String,
     },
 
     // 数据管理功能
+    /// 更新信息
     UpdateDataItem {
         token_id: String,
         new_ipfs_hash: String,
@@ -57,17 +53,17 @@ pub enum ExecuteMsg {
         operator: String,
     },
 
-    CreatePaperItem {
-        ipfs_hash: String,
-        doi: String,
-        metadata_uri: String,
-    },
     SetBaseCitationFee {
         fee: Uint128,
     },
 
     CitePaper {
         paper_id: String,
+    },
+    CreatePaperItem {
+        ipfs_hash: String,
+        doi: String,
+        metadata_uri: String,
     },
     SubmitCorrection {
         original_paper_id: String,

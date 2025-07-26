@@ -3,38 +3,7 @@
   "title": "ExecuteMsg",
   "oneOf": [
     {
-      "type": "object",
-      "required": [
-        "create_data_item"
-      ],
-      "properties": {
-        "create_data_item": {
-          "type": "object",
-          "required": [
-            "ipfs_hash",
-            "is_public",
-            "metadata_uri",
-            "price"
-          ],
-          "properties": {
-            "ipfs_hash": {
-              "type": "string"
-            },
-            "is_public": {
-              "type": "boolean"
-            },
-            "metadata_uri": {
-              "type": "string"
-            },
-            "price": {
-              "$ref": "#/definitions/Uint128"
-            }
-          }
-        }
-      },
-      "additionalProperties": false
-    },
-    {
+      "description": "请求访问，需要支付一定费用",
       "type": "object",
       "required": [
         "request_access"
@@ -55,6 +24,7 @@
       "additionalProperties": false
     },
     {
+      "description": "更新信息",
       "type": "object",
       "required": [
         "update_data_item"
@@ -225,34 +195,6 @@
     {
       "type": "object",
       "required": [
-        "create_paper_item"
-      ],
-      "properties": {
-        "create_paper_item": {
-          "type": "object",
-          "required": [
-            "doi",
-            "ipfs_hash",
-            "metadata_uri"
-          ],
-          "properties": {
-            "doi": {
-              "type": "string"
-            },
-            "ipfs_hash": {
-              "type": "string"
-            },
-            "metadata_uri": {
-              "type": "string"
-            }
-          }
-        }
-      },
-      "additionalProperties": false
-    },
-    {
-      "type": "object",
-      "required": [
         "set_base_citation_fee"
       ],
       "properties": {
@@ -283,6 +225,34 @@
           ],
           "properties": {
             "paper_id": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "create_paper_item"
+      ],
+      "properties": {
+        "create_paper_item": {
+          "type": "object",
+          "required": [
+            "doi",
+            "ipfs_hash",
+            "metadata_uri"
+          ],
+          "properties": {
+            "doi": {
+              "type": "string"
+            },
+            "ipfs_hash": {
+              "type": "string"
+            },
+            "metadata_uri": {
               "type": "string"
             }
           }

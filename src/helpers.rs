@@ -57,6 +57,12 @@ pub fn ensure_can_vote_on_proposal(env: &Env, proposal: &Proposal) -> Result<(),
     Ok(())
 }
 
+pub fn update_proposal_status(proposal: &mut Proposal, env: &Env) {
+    if proposal.status == ProposalStatus::Active && env.block.time.seconds() > proposal.voting_end {
+        proposal.status = ProposalStatus::Expired;
+    }
+}
+
 /// 检查提案是否已执行
 pub fn is_proposal_executed(proposal: &Proposal) -> bool {
     proposal.status == ProposalStatus::Executed

@@ -1,66 +1,22 @@
-use cosmwasm_std::{
-    entry_point, to_json_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env,
-    MessageInfo, Response, StdResult, Uint128,
-};
-
 use crate::error::ContractError;
 use crate::helpers::{
     ensure_can_execute_proposal, ensure_can_vote_on_proposal, ensure_dao_member,
     ensure_proposal_exists, is_dao_member, validate_dao_config, validate_voting_period,
 };
 use crate::msg::{
-    AccessLevel, BaseCitationFeeResponse, Citation, ContractInfoResponse, DaoConfig, DataItem,
-    DataVersion, ExecuteMsg, ExecutionData, InstantiateMsg, MemberAction, NumTokensResponse,
-    OwnerOfResponse, Proposal, ProposalStatus, ProposalType, QueryMsg, TokenInfoResponse, Vote,
-    VoteChoice, VoteCount,
+    AccessLevel, Citation, DaoConfig, DataItem, DataVersion, ExecuteMsg, ExecutionData,
+    MemberAction, Proposal, ProposalStatus, ProposalType, Vote, VoteChoice, VoteCount,
 };
 use crate::state::{
-    ACCESS_CONTROLS, AUTHORIZED_USERS, BASE_CITATION_FEE, CITATIONS, CONTRACT_NAME, CONTRACT_OWNER,
-    CONTRACT_SYMBOL, DAO_CONFIG, DAO_MEMBERS, DATA_ITEMS, DATA_VERSIONS, OPERATOR_APPROVALS,
-    PAPER_DOIS, PROPOSALS, PROPOSAL_COUNTER, TOKEN_APPROVALS, TOKEN_COUNT, TOKEN_ID_COUNTER,
-    TOKEN_OWNERS, VOTES, VOTE_COUNTS,
+    ACCESS_CONTROLS, AUTHORIZED_USERS, BASE_CITATION_FEE, CITATIONS, CONTRACT_OWNER, DAO_CONFIG,
+    DAO_MEMBERS, DATA_ITEMS, DATA_VERSIONS, OPERATOR_APPROVALS, PAPER_DOIS, PROPOSALS,
+    PROPOSAL_COUNTER, TOKEN_APPROVALS, TOKEN_COUNT, TOKEN_ID_COUNTER, TOKEN_OWNERS, VOTES,
+    VOTE_COUNTS,
 };
-
-#[entry_point]
-pub fn instantiate(
-    deps: DepsMut,
-    _env: Env,
-    _info: MessageInfo,
-    msg: InstantiateMsg,
-) -> Result<Response, ContractError> {
-    let owner = deps.api.addr_validate(&msg.owner)?;
-
-    CONTRACT_NAME.save(deps.storage, &msg.name)?;
-    CONTRACT_SYMBOL.save(deps.storage, &msg.symbol)?;
-    CONTRACT_OWNER.save(deps.storage, &owner)?;
-    TOKEN_ID_COUNTER.save(deps.storage, &0u64)?;
-    TOKEN_COUNT.save(deps.storage, &0u64)?;
-
-    BASE_CITATION_FEE.save(deps.storage, &Uint128::new(100_000))?; // 0.1 token
-
-    // 初始化 DAO
-    // 将合约创建者设置为第一个 DAO 成员
-    DAO_MEMBERS.save(deps.storage, owner.as_str(), &true)?;
-
-    // 初始化默认的 DAO 配置参数
-    let dao_config = DaoConfig {
-        voting_period: 604800,  // 7 天 (7 * 24 * 60 * 60 秒)
-        approval_threshold: 51, // 51% 通过阈值
-        min_members: 1,         // 最小成员数量为 1
-    };
-    DAO_CONFIG.save(deps.storage, &dao_config)?;
-
-    // 设置提案计数器为 0
-    PROPOSAL_COUNTER.save(deps.storage, &0u64)?;
-
-    Ok(Response::new()
-        .add_attribute("method", "instantiate")
-        .add_attribute("name", msg.name)
-        .add_attribute("symbol", msg.symbol)
-        .add_attribute("owner", owner.to_string())
-        .add_attribute("dao_initialized", "true")
-        .add_attribute("first_dao_member", owner.to_string()))
-}
+use cosmwasm_std::{
+    entry_point, Addr, BankMsg, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response,
+    StdResult, Uint128,
+};
 
 #[entry_point]
 pub fn execute(
@@ -70,13 +26,6 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::CreateDataItem {
-            ipfs_hash,
-            price,
-            is_public,
-            metadata_uri,
-        } => execute_create_data_item(deps, env, info, ipfs_hash, price, is_public, metadata_uri),
-
         ExecuteMsg::RequestAccess { token_id } => execute_request_access(deps, env, info, token_id),
 
         ExecuteMsg::UpdateDataItem {
@@ -108,13 +57,13 @@ pub fn execute(
 
         ExecuteMsg::RevokeAll { operator } => execute_revoke_all(deps, env, info, operator),
 
+        ExecuteMsg::CitePaper { paper_id } => execute_cite_paper(deps, env, info, paper_id),
+
         ExecuteMsg::CreatePaperItem {
             ipfs_hash,
             doi,
             metadata_uri,
         } => execute_create_paper_item(deps, env, info, ipfs_hash, doi, metadata_uri),
-
-        ExecuteMsg::CitePaper { paper_id } => execute_cite_paper(deps, env, info, paper_id),
 
         ExecuteMsg::SubmitCorrection {
             original_paper_id,
@@ -199,7 +148,7 @@ pub fn execute_cite_paper(
     let payment = info
         .funds
         .iter()
-        .find(|coin| coin.denom == "utoken")
+        .find(|coin| coin.denom == "inj")
         .map(|coin| coin.amount)
         .unwrap_or_else(Uint128::zero);
 
@@ -235,7 +184,7 @@ pub fn execute_cite_paper(
         let author_msg = CosmosMsg::Bank(BankMsg::Send {
             to_address: paper_owner.to_string(),
             amount: vec![Coin {
-                denom: "utoken".to_string(),
+                denom: "inj".to_string(),
                 amount: author_share,
             }],
         });
@@ -245,7 +194,7 @@ pub fn execute_cite_paper(
         let dao_msg = CosmosMsg::Bank(BankMsg::Send {
             to_address: contract_owner.to_string(),
             amount: vec![Coin {
-                denom: "utoken".to_string(),
+                denom: "inj".to_string(),
                 amount: dao_share,
             }],
         });
@@ -344,60 +293,6 @@ pub fn execute_set_base_citation_fee(
         .add_attribute("new_fee", fee.to_string()))
 }
 
-pub fn execute_create_data_item(
-    deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
-    ipfs_hash: String,
-    price: Uint128,
-    is_public: bool,
-    metadata_uri: String,
-) -> Result<Response, ContractError> {
-    // 获取下一个 token ID
-    let token_id = TOKEN_ID_COUNTER.load(deps.storage)?;
-    let token_id_str = token_id.to_string();
-
-    // 检查 token 是否已存在
-    if TOKEN_OWNERS.has(deps.storage, &token_id_str) {
-        return Err(ContractError::TokenExists {});
-    }
-
-    // 创建 NFT token
-    TOKEN_OWNERS.save(deps.storage, &token_id_str, &info.sender)?;
-
-    // 创建数据项
-    let data_item = DataItem {
-        owner: info.sender.clone(),
-        ipfs_hash: ipfs_hash.clone(),
-        price,
-        is_public,
-        total_earned: Uint128::zero(),
-        created_at: env.block.time.seconds(),
-        last_updated: env.block.time.seconds(),
-        metadata_uri,
-        is_frozen: false,
-    };
-    DATA_ITEMS.save(deps.storage, &token_id_str, &data_item)?;
-
-    // 创建初始版本
-    let version = DataVersion {
-        ipfs_hash: ipfs_hash.clone(),
-        timestamp: env.block.time.seconds(),
-    };
-    DATA_VERSIONS.save(deps.storage, &token_id_str, &vec![version])?;
-
-    // 更新计数器
-    TOKEN_ID_COUNTER.save(deps.storage, &(token_id + 1))?;
-    let count = TOKEN_COUNT.load(deps.storage)?;
-    TOKEN_COUNT.save(deps.storage, &(count + 1))?;
-
-    Ok(Response::new()
-        .add_attribute("method", "create_data_item")
-        .add_attribute("token_id", token_id_str)
-        .add_attribute("owner", info.sender)
-        .add_attribute("ipfs_hash", ipfs_hash))
-}
-
 pub fn execute_request_access(
     deps: DepsMut,
     _env: Env,
@@ -440,7 +335,7 @@ pub fn execute_request_access(
             let payment = info
                 .funds
                 .iter()
-                .find(|coin| coin.denom == "utoken") // 假设使用原生代币
+                .find(|coin| coin.denom == "inj") // 假设使用原生代币
                 .map(|coin| coin.amount)
                 .unwrap_or_else(Uint128::zero);
 
@@ -453,7 +348,7 @@ pub fn execute_request_access(
                 let send_msg = CosmosMsg::Bank(BankMsg::Send {
                     to_address: owner.to_string(),
                     amount: vec![Coin {
-                        denom: "utoken".to_string(),
+                        denom: "inj".to_string(),
                         amount: payment,
                     }],
                 });
@@ -754,319 +649,6 @@ fn is_approved_or_owner(deps: Deps, spender: &Addr, token_id: &str) -> StdResult
 
     Ok(false)
 }
-
-#[entry_point]
-pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
-    match msg {
-        QueryMsg::OwnerOf { token_id } => to_json_binary(&query_owner_of(deps, token_id)?),
-        QueryMsg::TokenInfo { token_id } => to_json_binary(&query_token_info(deps, token_id)?),
-        QueryMsg::AllTokens { start_after, limit } => {
-            to_json_binary(&query_all_tokens(deps, start_after, limit)?)
-        }
-        QueryMsg::NumTokens {} => to_json_binary(&query_num_tokens(deps)?),
-        QueryMsg::ContractInfo {} => to_json_binary(&query_contract_info(deps)?),
-        QueryMsg::GetDataItem { token_id } => to_json_binary(&query_data_item(deps, token_id)?),
-        QueryMsg::GetDataVersions { token_id } => {
-            to_json_binary(&query_data_versions(deps, token_id)?)
-        }
-        QueryMsg::GetAuthorizedUsers { token_id } => {
-            to_json_binary(&query_authorized_users(deps, token_id)?)
-        }
-        QueryMsg::CheckAccessLevel { token_id, user } => {
-            to_json_binary(&query_access_level(deps, token_id, user)?)
-        }
-
-        QueryMsg::GetCitations { paper_id } => to_json_binary(&query_citations(deps, paper_id)?),
-        QueryMsg::GetPaperDoi { paper_id } => to_json_binary(&query_paper_doi(deps, paper_id)?),
-        QueryMsg::GetBaseCitationFee {} => to_json_binary(&query_base_citation_fee(deps)?),
-
-        // DAO queries
-        QueryMsg::GetDaoMembers {} => to_json_binary(&query_dao_members(deps)?),
-        QueryMsg::GetDaoConfig {} => to_json_binary(&query_dao_config(deps)?),
-        QueryMsg::GetProposal { proposal_id } => {
-            to_json_binary(&query_proposal(deps, proposal_id)?)
-        }
-        QueryMsg::GetProposals {
-            start_after,
-            limit,
-            status_filter,
-        } => to_json_binary(&query_proposals(deps, start_after, limit, status_filter)?),
-        QueryMsg::GetVote { proposal_id, voter } => {
-            to_json_binary(&query_vote(deps, proposal_id, voter)?)
-        }
-        QueryMsg::GetVoteCount { proposal_id } => {
-            to_json_binary(&query_vote_count(deps, proposal_id)?)
-        }
-        QueryMsg::GetMemberVotingPower { member } => {
-            to_json_binary(&query_member_voting_power(deps, member)?)
-        }
-    }
-}
-
-pub fn query_owner_of(deps: Deps, token_id: String) -> StdResult<OwnerOfResponse> {
-    let owner = TOKEN_OWNERS.load(deps.storage, &token_id)?;
-    Ok(OwnerOfResponse { owner })
-}
-
-pub fn query_token_info(deps: Deps, token_id: String) -> StdResult<TokenInfoResponse> {
-    let owner = TOKEN_OWNERS.load(deps.storage, &token_id)?;
-    let data_item = DATA_ITEMS.load(deps.storage, &token_id)?;
-
-    Ok(TokenInfoResponse {
-        token_id,
-        owner,
-        data_item,
-    })
-}
-
-pub fn query_citations(deps: Deps, paper_id: String) -> StdResult<Vec<Citation>> {
-    CITATIONS
-        .may_load(deps.storage, &paper_id)
-        .map(|citations| citations.unwrap_or_default())
-}
-
-pub fn query_all_tokens(
-    deps: Deps,
-    start_after: Option<String>,
-    limit: Option<u32>,
-) -> StdResult<Vec<String>> {
-    let limit = limit.unwrap_or(30).min(100) as usize;
-    let start = start_after
-        .as_deref()
-        .map(cw_storage_plus::Bound::exclusive);
-
-    let tokens: StdResult<Vec<String>> = TOKEN_OWNERS
-        .range(deps.storage, start, None, cosmwasm_std::Order::Ascending)
-        .take(limit)
-        .map(|item| item.map(|(k, _)| k))
-        .collect();
-
-    tokens
-}
-
-pub fn query_num_tokens(deps: Deps) -> StdResult<NumTokensResponse> {
-    let count = TOKEN_COUNT.load(deps.storage)?;
-    Ok(NumTokensResponse { count })
-}
-
-pub fn query_contract_info(deps: Deps) -> StdResult<ContractInfoResponse> {
-    let name = CONTRACT_NAME.load(deps.storage)?;
-    let symbol = CONTRACT_SYMBOL.load(deps.storage)?;
-    let owner = CONTRACT_OWNER.load(deps.storage)?;
-
-    Ok(ContractInfoResponse {
-        name,
-        symbol,
-        owner,
-    })
-}
-
-pub fn query_data_item(deps: Deps, token_id: String) -> StdResult<DataItem> {
-    DATA_ITEMS.load(deps.storage, &token_id)
-}
-
-pub fn query_data_versions(deps: Deps, token_id: String) -> StdResult<Vec<DataVersion>> {
-    DATA_VERSIONS.load(deps.storage, &token_id)
-}
-
-pub fn query_authorized_users(deps: Deps, token_id: String) -> StdResult<Vec<Addr>> {
-    AUTHORIZED_USERS
-        .may_load(deps.storage, &token_id)
-        .map(|users| users.unwrap_or_default())
-}
-
-pub fn query_access_level(deps: Deps, token_id: String, user: String) -> StdResult<AccessLevel> {
-    ACCESS_CONTROLS
-        .may_load(deps.storage, (&token_id, &user))
-        .map(|level| level.unwrap_or(AccessLevel::None))
-}
-
-pub fn query_paper_doi(deps: Deps, paper_id: String) -> StdResult<String> {
-    PAPER_DOIS.load(deps.storage, &paper_id)
-}
-
-pub fn query_base_citation_fee(deps: Deps) -> StdResult<BaseCitationFeeResponse> {
-    let fee = BASE_CITATION_FEE.load(deps.storage)?;
-    Ok(BaseCitationFeeResponse { fee })
-}
-
-// DAO 查询函数实现
-
-/// 查询所有 DAO 成员
-pub fn query_dao_members(deps: Deps) -> StdResult<crate::msg::DaoMembersResponse> {
-    let members: StdResult<Vec<Addr>> = DAO_MEMBERS
-        .range(deps.storage, None, None, cosmwasm_std::Order::Ascending)
-        .filter_map(|item| match item {
-            Ok((addr_str, is_member)) => {
-                if is_member {
-                    match deps.api.addr_validate(&addr_str) {
-                        Ok(addr) => Some(Ok(addr)),
-                        Err(e) => Some(Err(e)),
-                    }
-                } else {
-                    None
-                }
-            }
-            Err(e) => Some(Err(e)),
-        })
-        .collect();
-
-    let members = members?;
-    let total_count = members.len() as u64;
-
-    Ok(crate::msg::DaoMembersResponse {
-        members,
-        total_count,
-    })
-}
-
-/// 查询 DAO 配置参数
-pub fn query_dao_config(deps: Deps) -> StdResult<crate::msg::DaoConfigResponse> {
-    let config = DAO_CONFIG.load(deps.storage)?;
-    Ok(crate::msg::DaoConfigResponse { config })
-}
-
-/// 查询单个提案详情
-pub fn query_proposal(deps: Deps, proposal_id: u64) -> StdResult<crate::msg::ProposalResponse> {
-    let proposal = PROPOSALS.load(deps.storage, proposal_id)?;
-    Ok(crate::msg::ProposalResponse { proposal })
-}
-
-/// 查询提案列表，支持分页和状态过滤
-pub fn query_proposals(
-    deps: Deps,
-    start_after: Option<u64>,
-    limit: Option<u32>,
-    status_filter: Option<ProposalStatus>,
-) -> StdResult<crate::msg::ProposalsResponse> {
-    let limit = limit.unwrap_or(30).min(100) as usize;
-
-    // 设置起始点
-    let start = start_after.map(cw_storage_plus::Bound::exclusive);
-
-    // 获取所有提案并应用过滤器
-    let proposals: StdResult<Vec<Proposal>> = PROPOSALS
-        .range(deps.storage, start, None, cosmwasm_std::Order::Ascending)
-        .filter_map(|item| {
-            match item {
-                Ok((_, proposal)) => {
-                    // 应用状态过滤器
-                    if let Some(ref filter_status) = status_filter {
-                        if proposal.status != *filter_status {
-                            return None;
-                        }
-                    }
-                    Some(Ok(proposal))
-                }
-                Err(e) => Some(Err(e)),
-            }
-        })
-        .take(limit)
-        .collect();
-
-    let proposals = proposals?;
-
-    // 获取总数（用于分页信息）
-    let total_count = if let Some(ref filter_status) = status_filter {
-        // 如果有状态过滤器，需要计算过滤后的总数
-        PROPOSALS
-            .range(deps.storage, None, None, cosmwasm_std::Order::Ascending)
-            .filter(|item| match item {
-                Ok((_, proposal)) => proposal.status == *filter_status,
-                Err(_) => false,
-            })
-            .count() as u64
-    } else {
-        // 没有过滤器，返回所有提案数量
-        PROPOSALS
-            .range(deps.storage, None, None, cosmwasm_std::Order::Ascending)
-            .count() as u64
-    };
-
-    Ok(crate::msg::ProposalsResponse {
-        proposals,
-        total_count,
-    })
-}
-
-/// 查询特定投票记录
-pub fn query_vote(
-    deps: Deps,
-    proposal_id: u64,
-    voter: String,
-) -> StdResult<crate::msg::VoteResponse> {
-    let voter_addr = deps.api.addr_validate(&voter)?;
-    let vote = VOTES.may_load(deps.storage, (proposal_id, voter_addr.as_str()))?;
-    Ok(crate::msg::VoteResponse { vote })
-}
-
-/// 查询提案投票统计
-pub fn query_vote_count(deps: Deps, proposal_id: u64) -> StdResult<crate::msg::VoteCountResponse> {
-    // 首先检查提案是否存在
-    PROPOSALS.load(deps.storage, proposal_id)?;
-
-    // 尝试从缓存中加载投票统计
-    let vote_count = VOTE_COUNTS.may_load(deps.storage, proposal_id)?;
-
-    let vote_count = if let Some(count) = vote_count {
-        count
-    } else {
-        // 如果缓存中没有，实时计算投票统计
-        let mut yes = 0u64;
-        let mut no = 0u64;
-        let mut abstain = 0u64;
-
-        // 遍历所有投票记录
-        let votes: StdResult<Vec<_>> = VOTES
-            .prefix(proposal_id)
-            .range(deps.storage, None, None, cosmwasm_std::Order::Ascending)
-            .collect();
-
-        for vote_result in votes? {
-            let (_, vote) = vote_result;
-            match vote.choice {
-                VoteChoice::Yes => yes += 1,
-                VoteChoice::No => no += 1,
-                VoteChoice::Abstain => abstain += 1,
-            }
-        }
-
-        // 获取 DAO 成员总数作为有资格投票的总数
-        let total_eligible = query_dao_members(deps)?.total_count;
-
-        VoteCount {
-            yes,
-            no,
-            abstain,
-            total_eligible,
-        }
-    };
-
-    Ok(crate::msg::VoteCountResponse { vote_count })
-}
-
-/// 查询成员投票权力
-pub fn query_member_voting_power(
-    deps: Deps,
-    member: String,
-) -> StdResult<crate::msg::VotingPowerResponse> {
-    let member_addr = deps.api.addr_validate(&member)?;
-    let is_member = is_dao_member(deps, &member_addr)?;
-
-    // 在当前实现中，每个 DAO 成员都有相等的投票权重（1 票）
-    let power = if is_member { 1u64 } else { 0u64 };
-
-    Ok(crate::msg::VotingPowerResponse { power, is_member })
-}
-
-// DAO 成员管理功能实现
-
-// /// 检查地址是否为 DAO 成员
-// fn is_dao_member(deps: Deps, address: &Addr) -> StdResult<bool> {
-//     DAO_MEMBERS
-//         .may_load(deps.storage, address.as_str())
-//         .map(|member| member.unwrap_or(false))
-// }
 
 /// 提交文章发布提案
 pub fn execute_submit_article_proposal(
@@ -1696,7 +1278,8 @@ pub fn check_approval_threshold(deps: Deps, proposal_id: u64) -> Result<bool, Co
     let dao_config = DAO_CONFIG.load(deps.storage)?;
 
     // 计算通过阈值（向上取整）
-    let required_yes_votes = (vote_count.total_eligible * dao_config.approval_threshold).div_ceil(100);
+    let required_yes_votes =
+        (vote_count.total_eligible * dao_config.approval_threshold).div_ceil(100);
 
     // 检查是否达到通过阈值
     Ok(vote_count.yes >= required_yes_votes)
@@ -1712,7 +1295,8 @@ pub fn check_impossible_to_pass(deps: Deps, proposal_id: u64) -> Result<bool, Co
     let dao_config = DAO_CONFIG.load(deps.storage)?;
 
     // 计算通过阈值
-    let required_yes_votes = (vote_count.total_eligible * dao_config.approval_threshold).div_ceil(100);
+    let required_yes_votes =
+        (vote_count.total_eligible * dao_config.approval_threshold).div_ceil(100);
 
     // 计算已投票数
     let total_voted = vote_count.yes + vote_count.no + vote_count.abstain;
@@ -1735,7 +1319,8 @@ pub fn get_detailed_vote_statistics(
     let impossible = check_impossible_to_pass(deps, proposal_id)?;
 
     let dao_config = DAO_CONFIG.load(deps.storage)?;
-    let required_yes_votes = (vote_count.total_eligible * dao_config.approval_threshold).div_ceil(100);
+    let required_yes_votes =
+        (vote_count.total_eligible * dao_config.approval_threshold).div_ceil(100);
 
     Ok((vote_count, passed, impossible, required_yes_votes))
 }

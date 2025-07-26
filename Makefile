@@ -18,4 +18,7 @@ fmt:
 clean:
 	cargo clean
 
-.PHONY: build test artifacts fmt clean
+schema:
+	cargo schema
+
+.PHONY: build test artifacts fmt clean schema
